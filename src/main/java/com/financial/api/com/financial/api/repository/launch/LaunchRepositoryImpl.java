@@ -1,7 +1,11 @@
 package com.financial.api.com.financial.api.repository.launch;
 
+import com.financial.api.com.financial.api.model.Category_;
 import com.financial.api.com.financial.api.model.Launch;
+import com.financial.api.com.financial.api.model.Launch_;
+import com.financial.api.com.financial.api.model.People_;
 import com.financial.api.com.financial.api.repository.filter.LaunchFilter;
+import com.financial.api.com.financial.api.repository.projection.SummaryLaunch;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +46,31 @@ public class LaunchRepositoryImpl implements  LaunchRepositoryQuery{
         return new PageImpl<>(launchTypedQuery.getResultList(), pageable, total(launchFilter));
     }
 
+    @Override
+    public Page<SummaryLaunch> summary(LaunchFilter launchFilter, Pageable pageable) {
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<SummaryLaunch> criteria = criteriaBuilder.createQuery(SummaryLaunch.class);
+        //get data from root entity
+        Root<Launch> root = criteria.from(Launch.class);
+
+        criteria.select(criteriaBuilder.construct(SummaryLaunch.class
+                , root.get(Launch_.code), root.get(Launch_.description)
+                , root.get(Launch_.dueDate), root.get(Launch_.paymentDate)
+                , root.get(Launch_.value), root.get(Launch_.type)
+                , root.get(Launch_.category).get(Category_.name)
+                , root.get(Launch_.people).get(People_.name)));
+
+        //restrictions
+        Predicate[] predicates = createRestrictions(launchFilter, criteriaBuilder, root);
+        criteria.where(predicates);
+
+        TypedQuery<SummaryLaunch> launchTypedQuery = entityManager.createQuery(criteria);
+        addRestrictionsPagination(launchTypedQuery, pageable);
+
+        return new PageImpl<>(launchTypedQuery.getResultList(), pageable, total(launchFilter));
+
+    }
+
     private Predicate[] createRestrictions(LaunchFilter launchFilter, CriteriaBuilder criteriaBuilder,
                                            Root<Launch> root) {
 
@@ -61,7 +90,7 @@ public class LaunchRepositoryImpl implements  LaunchRepositoryQuery{
         return predicates.toArray(new Predicate[predicates.size()]);
     }
 
-    private void addRestrictionsPagination(TypedQuery<Launch> launchTypedQuery, Pageable pageable) {
+    private void addRestrictionsPagination(TypedQuery<?> launchTypedQuery, Pageable pageable) {
         int currentPage = pageable.getPageNumber();
         int totalItensPerPage = pageable.getPageSize();
         int firstItemPage = currentPage * totalItensPerPage;

@@ -1,5 +1,7 @@
 package com.financial.api.com.financial.api.config.token;
 
+import com.financial.api.com.financial.api.config.properties.ApiProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -24,6 +26,10 @@ import javax.servlet.http.HttpServletResponse;
  */
 @ControllerAdvice
 public class RefreshTokenPostProcessor implements ResponseBodyAdvice<OAuth2AccessToken>{
+
+    @Autowired
+    private ApiProperties apiProperties;
+
     @Override
     public boolean supports(MethodParameter methodParameter, Class<? extends HttpMessageConverter<?>> aClass) {
         return methodParameter.getMethod().getName().equals("postAccessToken");//return true and call beforeBodyWrite
@@ -57,7 +63,7 @@ public class RefreshTokenPostProcessor implements ResponseBodyAdvice<OAuth2Acces
         Cookie refreshTokenCookie  = new Cookie("refreshToken", refreshToken);//creating cookie
         //Cookie properties
         refreshTokenCookie.setHttpOnly(true);//only HTTp access, JS cannot get it
-        refreshTokenCookie.setSecure(false);//cookie must work only HTTPS? to do change to TRUE in PROD
+        refreshTokenCookie.setSecure(apiProperties.getSecurity().isEnableHttpsToProd());//cookie must work only HTTPS, True in prod , false in DEV
         refreshTokenCookie.setPath(req.getContextPath() + "/oauth/token");//patch browser send
         refreshTokenCookie.setMaxAge(30);//expire in 30 days
         resp.addCookie(refreshTokenCookie);

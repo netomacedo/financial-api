@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -34,6 +35,7 @@ public class CategoryController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('ROLE_CREATE_CATEGORY') and #oauth2.hasScope('write')")
     public ResponseEntity<Category> addCategory(@Valid @RequestBody Category category, HttpServletResponse response){
         Category categorySave = categoryRepository.save(category);
 
@@ -45,6 +47,7 @@ public class CategoryController {
     }
 
     @GetMapping("/{code}")
+    @PreAuthorize("hasAuthority('ROLE_SEARCH_CATEGORY')and #oauth2.hasScope('read')")
     public ResponseEntity<Category> findById(@PathVariable Long code) {
         Category category = categoryRepository.findOne(code);
         if (category != null) {
